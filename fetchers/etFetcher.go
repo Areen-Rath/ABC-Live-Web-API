@@ -48,9 +48,11 @@ func etFetch(g *geziyor.Geziyor, r *client.Response) {
 	parsed.Find("div.top-story-panel a").Each(func(_ int, a *goquery.Selection) {
 		link, _ := a.Attr("href");
 		title := strings.TrimSpace(a.Text());
-		etLinks = append(etLinks, "https://bfsi.economictimes.indiatimes.com" + link);
-		etTitles = append(etTitles, title);
-		etDescs = append(etDescs, "");
+		if (title != "") {
+			etLinks = append(etLinks, "https://bfsi.economictimes.indiatimes.com" + link);
+			etTitles = append(etTitles, title);
+			etDescs = append(etDescs, "");
+		}
 	});
 }
 

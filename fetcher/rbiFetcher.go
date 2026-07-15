@@ -1,20 +1,24 @@
-package fetchers
+package fetcher
 
 import (
-    "strings"
-	
-    "github.com/PuerkitoBio/goquery"
+	"strings"
+	"sync"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
-func RBIFetcher() (mix [2][7]string) {
+func RBIFetch(wg *sync.WaitGroup, ch chan <- [2][7]string) {
+	defer wg.Done()
+
 	headers := [7]string{}
 	data := [7]string{}
+	mix := [2][7]string{}
 
 	resp, err := httpClient.Get("https://rbi.org.in")
 	if err != nil {
 		mix[0] = headers
         mix[1] = data
-        return mix
+        ch <- mix
 	}
 	defer resp.Body.Close()
 
@@ -22,7 +26,7 @@ func RBIFetcher() (mix [2][7]string) {
 	if err != nil {
         mix[0] = headers
         mix[1] = data
-        return mix
+        ch <- mix
     }
 
 	count := 0
@@ -48,5 +52,5 @@ func RBIFetcher() (mix [2][7]string) {
 
 	mix[0] = headers
 	mix[1] = data
-	return mix
+	ch <- mix
 }

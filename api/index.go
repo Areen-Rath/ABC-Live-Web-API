@@ -1,4 +1,4 @@
-package handler;
+package handler
 
 import (
 	"net/http"
@@ -7,11 +7,16 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"ABC-Live-Web-API/fetchers"
+	"ABC-Live-Web-API/fetcher"
 );
 
 type Data struct {
 	Data	any	`json:"data"`
+}
+
+type MixData struct {
+	News	[]fetcher.News	`json:"news"`
+	Stats	[2][7]string	`json:"stats"`
 }
 
 var e *echo.Echo
@@ -19,23 +24,16 @@ var e *echo.Echo
 func init() {
 	e = echo.New()
 	e.Use(middleware.Gzip())
-	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
+	e.Use(middleware.ContextTimeoutWithConfig(middleware.ContextTimeoutConfig{
 		Timeout: 15 * time.Second,
 	}))
 
-	e.GET("/rbi", func(c echo.Context) error {
-		data := Data{fetchers.RBIFetcher()}
-		return c.JSON(http.StatusOK, data)
-	})
-
-	e.GET("/et_bfsi", func(c echo.Context) error {
-		data := Data{fetchers.ETFetcher()}
-		return c.JSON(http.StatusOK, data)
-	})
-
-	e.GET("/business_line", func(c echo.Context) error {
-		data := Data{fetchers.BLFetcher()}
-		return c.JSON(http.StatusOK, data)
+	e.GET("/", func(c echo.Context) error {
+		et, bl, rbi := fetcher.Fetch()
+		return c.JSON(http.StatusOK, MixData{
+			append(et, bl...),
+			rbi,
+		})
 	})
 }
 

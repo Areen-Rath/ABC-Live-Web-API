@@ -1,48 +1,33 @@
-package fetchers
+package fetcher
 
 import (
 	"encoding/xml"
 	"html"
-	"net/http"
+	"io"
+	"sync"
 	"time"
 )
 
-type News struct {
-	Title	string	`json:"title"`
-	Desc	string	`json:"desc"`
-	Link	string	`json:"link"`
-}
+func newsFetch(link string, source string, wg *sync.WaitGroup, ch chan <- []News) {
+	defer wg.Done()
 
-type rssFeed struct {
-	Items		[]rssItem `xml:"channel>item"`
-}
+	resp, err := httpClient.Get(link)
+    if err != nil {
+        ch <- []News{}
+    }
+    defer resp.Body.Close()
 
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        ch <- []News{}
+    }
 
-type rssItem struct {
-	Title       string `xml:"title"`
-	Link        string `xml:"link"`
-	Description string `xml:"description"`
-	PubDate		string `xml:"pubDate"`
-}
-
-var httpClient = &http.Client{
-	Timeout:	10 * time.Second,
-	Transport:	&http.Transport{
-		MaxIdleConns:			100,
-		MaxIdleConnsPerHost:	10,
-		MaxConnsPerHost:		10,
-		IdleConnTimeout:		90 * time.Second,
-	},
-}
-
-
-func parse(body []byte) (news []News) {
 	var feed rssFeed
 	if err := xml.Unmarshal(body, &feed); err != nil {
-		return nil
+		ch <- []News{}
 	}
 
-	news = make([]News, 0, len(feed.Items))
+	news := make([]News, 0, len(feed.Items))
 
 	now := time.Now()
 
@@ -52,11 +37,12 @@ func parse(body []byte) (news []News) {
 				Title: html.UnescapeString(item.Title),
 				Desc:  html.UnescapeString(item.Description),
 				Link:  item.Link,
+				Source: source,
 			})
 		}
 	}
 
-	return news
+	ch <- news
 }
 
 func isTodayOrYesterday(pubDate string, now time.Time) bool {

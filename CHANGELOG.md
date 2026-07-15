@@ -15,3 +15,8 @@
 * Optimized HTTP client connection pooling
 * Added request timeout middleware
 * Improved date comparison
+
+# v2.0.0
+
+* Goroutines employed to concurrently fetch from multiple websites
+* Multiple endpoints replaced with a single endpoint to remove API round-trips
